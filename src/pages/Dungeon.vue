@@ -1,15 +1,19 @@
-<template>
+﻿<template>
   <div class="page-container">
     <el-card class="page-card">
       <h1>副本</h1>
       <p class="placeholder-text">副本页面待开发</p>
     </el-card>
+    <CharacterStatusBar />
   </div>
 </template>
+
 <script setup>
+import CharacterStatusBar from "../components/CharacterStatusBar.vue"
 </script>
+
 <style scoped>
-.page-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f5f7fa; }
-.page-card { width: 400px; text-align: center; }
-.placeholder-text { color: #909399; margin-top: 12px; }
+h1 {
+  color: var(--text-primary, #e0e0e0);
+}
 </style>

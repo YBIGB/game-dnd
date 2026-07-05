@@ -1,0 +1,61 @@
+﻿/* ===== 全局暗黑奇幻主题 ===== */
+
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1e2a45;
+  --bg-status-bar: rgba(15, 15, 35, 0.95);
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0b0;
+  --text-muted: #6c6c80;
+  --border-color: #2a3a5c;
+  --accent-gold: #f0c040;
+  --hp-green: #67c23a;
+  --hp-yellow: #e6a23c;
+  --hp-red: #f56c6c;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh;
+}
+
+/* Element Plus 全局暗色覆盖 */
+.el-card {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.el-card__header {
+  border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* 页面容器统一底座 */
+.page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding-bottom: 70px;
+  background-color: var(--bg-primary);
+}
+
+.page-card {
+  width: 400px;
+  text-align: center;
+}
+
+.placeholder-text {
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
