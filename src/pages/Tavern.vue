@@ -123,7 +123,21 @@
 
       <!-- 底部：进入副本 -->
       <div class="bottom-action">
+        <el-tooltip
+          v-if="!character.isAlive"
+          content="角色已阵亡，无法进入副本"
+          placement="top"
+        >
+          <el-button
+            class="enter-dungeon-btn"
+            size="large"
+            disabled
+          >
+            ⚔️ 进入副本
+          </el-button>
+        </el-tooltip>
         <el-button
+          v-else
           class="enter-dungeon-btn"
           size="large"
           @click="enterDungeon"
@@ -539,6 +553,14 @@ function enterDungeon() {
   box-shadow: none;
 }
 
+.enter-dungeon-btn.is-disabled {
+  background: #4a4a5a !important;
+  color: #7a7a8a !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* ========== 无角色回退 ========== */
 .page-container {
   display: flex;
@@ -574,3 +596,5 @@ function enterDungeon() {
   }
 }
 </style>
+
+
