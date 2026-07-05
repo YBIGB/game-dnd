@@ -98,7 +98,7 @@ async function handleLogin() {
   const account = form.account.trim().toLowerCase()
   if (VALID_ACCOUNTS.includes(account) && form.password === VALID_PASSWORD) {
     authStore.setUsername(account)
-    router.push("/lobby")
+    router.push("/tavern")
   } else {
     ElMessageBox.alert("账号或密码错误", "登录失败", {
       confirmButtonText: "确定",
@@ -222,3 +222,4 @@ async function handleLogin() {
   letter-spacing: 0.5px;
 }
 </style>
+
