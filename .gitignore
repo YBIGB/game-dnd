@@ -1,0 +1,26 @@
+﻿node_modules
+dist
+.DS_Store
+*.local
+
+# Vite
+.vite
+vite.err
+vite.log
+
+# IDE
+.idea
+*.swp
+*.swo
+*~
+.vscode
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
