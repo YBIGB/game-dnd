@@ -19,6 +19,16 @@ export const useCharacterStore = defineStore("character", () => {
     characters.value.push(character)
   }
 
+  function removeCharacter(id) {
+    const idx = characters.value.findIndex(c => c.id === id)
+    if (idx !== -1) {
+      characters.value.splice(idx, 1)
+      if (currentCharacter.value && currentCharacter.value.id === id) {
+        currentCharacter.value = null
+      }
+    }
+  }
+
   function initDemoData() {
     if (characters.value.length > 0) return
     characters.value.push({
@@ -71,6 +81,7 @@ export const useCharacterStore = defineStore("character", () => {
     isCurrentCharacterAlive,
     selectCharacter,
     addCharacter,
+    removeCharacter,
     initDemoData,
   }
 })

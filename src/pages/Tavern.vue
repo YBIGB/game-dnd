@@ -45,7 +45,19 @@
             <span class="char-title">{{ characterStore.currentCharacter.name }}</span>
             <span class="char-subtitle">Lv.{{ characterStore.currentCharacter.level }}</span>
           </div>
-          <el-button class="back-btn" @click="backToList">返回</el-button>
+          <div class="bar-right">
+            <el-popconfirm
+              title="确定要遣散该冒险者吗？"
+              confirm-button-text="遣散"
+              cancel-button-text="取消"
+              @confirm="dismissCharacter"
+            >
+              <template #reference>
+                <el-button type="danger" size="small" plain>遣散冒险者</el-button>
+              </template>
+            </el-popconfirm>
+            <el-button class="back-btn" @click="backToList">返回</el-button>
+          </div>
         </div>
       </header>
 
@@ -84,16 +96,16 @@
                 <div v-if="characterStore.currentCharacter.inventory && characterStore.currentCharacter.inventory.length > 0" class="inventory-list">
                   <div v-for="(item, idx) in characterStore.currentCharacter.inventory" :key="idx" class="inv-item">
                     <span class="inv-name">{{ item.name }}</span>
-                    <el-tag type="info" size="small" class="inv-qty">x{{ item.qty }}</el-tag>
+                    <el-tag class="inv-qty" size="small" type="info">×{{ item.qty }}</el-tag>
                   </div>
                 </div>
-                <div v-else class="empty-tab"><p>背包空空如也……</p></div>
+                <div v-else class="empty-tab"><p>背包空空如也</p></div>
               </el-tab-pane>
-              <el-tab-pane label="通关记录" name="records">
+              <el-tab-pane label="冒险记录" name="records">
                 <div v-if="characterStore.currentCharacter.completedDungeons && characterStore.currentCharacter.completedDungeons.length > 0" class="record-list">
-                  <div v-for="(dungeon, idx) in characterStore.currentCharacter.completedDungeons" :key="idx" class="record-item">
-                    <span class="record-icon">🏁</span>
-                    <span class="record-name">{{ dungeon }}</span>
+                  <div v-for="(name, idx) in characterStore.currentCharacter.completedDungeons" :key="idx" class="record-item">
+                    <span class="record-icon">🏆</span>
+                    <span class="record-name">{{ name }}</span>
                   </div>
                 </div>
                 <div v-else class="empty-tab"><p>尚未通关任何副本</p></div>
@@ -103,37 +115,33 @@
         </div>
 
         <div class="bottom-action">
-          <el-tooltip v-if="!characterStore.currentCharacter.isAlive" content="角色已阵亡，无法进入副本" placement="top">
-            <el-button class="enter-dungeon-btn" size="large" disabled>⚔️ 进入副本</el-button>
-          </el-tooltip>
-          <el-button v-else class="enter-dungeon-btn" size="large" @click="enterDungeon">⚔️ 进入副本</el-button>
+          <el-button
+            class="enter-dungeon-btn"
+            :class="{ 'is-disabled': !characterStore.isCurrentCharacterAlive }"
+            :disabled="!characterStore.isCurrentCharacterAlive"
+            @click="goDungeon"
+          >
+            进入副本
+          </el-button>
         </div>
       </main>
-
-      <CharacterStatusBar />
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue"
+import { ref, computed } from "vue"
 import { useRouter } from "vue-router"
-import { useAuthStore } from "../stores/auth"
+import { ElMessage } from "element-plus"
 import { useCharacterStore } from "../stores/character"
-import { useDungeonStore } from "../stores/dungeon"
-import CharacterStatusBar from "../components/CharacterStatusBar.vue"
+import { useAuthStore } from "../stores/auth"
 import tavernBg from "../assets/tavern-bg.png"
 
 const router = useRouter()
-const authStore = useAuthStore()
 const characterStore = useCharacterStore()
-const dungeonStore = useDungeonStore()
+const authStore = useAuthStore()
 
 const activeTab = ref("inventory")
-
-onMounted(() => {
-  characterStore.initDemoData()
-})
 
 const statList = [
   { key: "strength", label: "力量" },
@@ -143,6 +151,29 @@ const statList = [
   { key: "wisdom", label: "感知" },
   { key: "charisma", label: "魅力" },
 ]
+
+function goCreateCharacter() {
+  router.push("/create-character")
+}
+
+function focusCharacter(c) {
+  characterStore.selectCharacter(c)
+}
+
+function backToList() {
+  characterStore.selectCharacter(null)
+}
+
+function goDungeon() {
+  router.push("/dungeon")
+}
+
+function dismissCharacter() {
+  const c = characterStore.currentCharacter
+  if (!c) return
+  characterStore.removeCharacter(c.id)
+  ElMessage.success(`冒险者 ${c.name} 已被遣散`)
+}
 
 const hpPercent = computed(() => {
   const c = characterStore.currentCharacter
@@ -158,91 +189,72 @@ const hpColor = computed(() => {
 
 function hpClass(c) {
   if (!c.isAlive) return "dead-text"
-  const r = c.hp / c.maxHp
-  if (r > 0.6) return "healthy"
-  if (r >= 0.3) return "wounded"
+  const ratio = c.hp / c.maxHp
+  if (ratio > 0.6) return "healthy"
+  if (ratio >= 0.3) return "warning"
   return "critical"
 }
 
 function statColor(val) {
-  if (val >= 14) return "#67c23a"
-  if (val >= 10) return "#e6a23c"
+  if (val >= 16) return "#f0c040"
+  if (val >= 12) return "#67c23a"
+  if (val >= 8) return "#a0a0b8"
   return "#f56c6c"
-}
-
-function focusCharacter(c) {
-  characterStore.selectCharacter(c)
-}
-
-function backToList() {
-  characterStore.selectCharacter(null)
-}
-
-function goCreateCharacter() {
-  router.push("/create-character")
-}
-
-function enterDungeon() {
-  dungeonStore.resetDungeon()
-  router.push("/dungeon")
 }
 </script>
 
 <style scoped>
+:root {
+  --bg-page: #0a0a1a;
+  --bg-card: rgba(20, 20, 45, 0.85);
+  --border-color: #2a3a5c;
+  --text-primary: #e8e8f0;
+  --text-secondary: #8888a8;
+  --text-muted: #6c6c80;
+  --accent-gold: #f0c040;
+  --hp-green: #67c23a;
+  --hp-yellow: #e6a23c;
+  --hp-red: #f56c6c;
+}
+
 .tavern-page {
   min-height: 100vh;
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
-  position: relative;
-  background-color: #1a1a2e;
+  padding-bottom: 40px;
 }
 
 .top-bar {
+  background: rgba(15, 15, 35, 0.9);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(8px);
+  padding: 16px 32px;
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(15, 15, 35, 0.92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border-color);
 }
 
 .top-bar-inner {
   max-width: 1100px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
+  justify-content: space-between;
 }
 
 .welcome-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.welcome-icon { font-size: 22px; }
+.welcome-icon { font-size: 24px; line-height: 1; }
 
-.action-btn {
-  font-size: 14px;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #e6a23c, #f0c040);
-  border: none;
-  color: #1a1a2e;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.action-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(240, 192, 64, 0.3);
-  background: linear-gradient(135deg, #f0c040, #f5d060);
-}
+.action-btn { font-weight: 600; letter-spacing: 1px; }
 
 .bar-left {
   display: flex;
@@ -251,114 +263,136 @@ function enterDungeon() {
 }
 
 .char-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--accent-gold);
 }
 
-.char-subtitle { font-size: 15px; color: var(--text-secondary); }
-
-.back-btn {
-  font-size: 13px;
-  padding: 8px 18px;
-  border-radius: 8px;
-  border-color: var(--border-color);
+.char-subtitle {
+  font-size: 16px;
+  font-weight: 600;
   color: var(--text-secondary);
-  background: transparent;
 }
 
-.back-btn:hover {
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
+
+.back-btn { font-weight: 600; }
 
 .main-content {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 32px 24px 100px;
-  position: relative;
-  z-index: 1;
+  padding: 32px 20px;
 }
 
+/* ========== 空状态 ========== */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 20px;
+  padding: 100px 20px;
   text-align: center;
 }
 
-.empty-icon { font-size: 72px; margin-bottom: 20px; opacity: 0.6; }
-.empty-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-.empty-desc { font-size: 15px; color: var(--text-muted); margin-bottom: 28px; }
+.empty-icon { font-size: 72px; margin-bottom: 16px; }
+.empty-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0; }
+.empty-desc { color: var(--text-muted); font-size: 15px; margin: 0 0 28px 0; }
+.empty-btn { font-weight: 600; }
 
-.empty-btn {
-  border-radius: 8px;
-  padding: 12px 32px;
-  font-size: 15px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #e6a23c, #f0c040);
-  border: none;
-  color: #1a1a2e;
-}
-
-.empty-btn:hover {
-  background: linear-gradient(135deg, #f0c040, #f5d060);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(240, 192, 64, 0.3);
-}
-
+/* ========== 卡片网格 ========== */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
 }
 
 .character-card {
-  position: relative;
   display: flex;
   gap: 16px;
-  padding: 20px;
   background: var(--bg-card);
-  border: 2px solid var(--hp-green);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
+  padding: 18px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  transition: transform 0.15s, border-color 0.2s, box-shadow 0.15s;
+  position: relative;
 }
 
 .character-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(103, 194, 58, 0.15);
+  transform: translateY(-3px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 8px 24px rgba(240, 192, 64, 0.12);
 }
 
-.character-card.dead { border-color: #5a5a6a; }
-.character-card.dead:hover { box-shadow: 0 8px 30px rgba(90, 90, 106, 0.15); }
+.character-card.dead {
+  opacity: 0.55;
+}
 
 .avatar-section {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 60px;
+  height: 60px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 50%;
   border: 2px solid var(--border-color);
 }
 
-.avatar-icon { font-size: 36px; line-height: 1; }
+.avatar-icon { font-size: 32px; line-height: 1; }
 
-.info-section { flex: 1; min-width: 0; }
-.char-name { font-size: 20px; font-weight: 700; color: var(--accent-gold); margin-bottom: 2px; }
-.char-level { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
-.char-stats { display: flex; flex-direction: column; gap: 6px; }
-.stat-row { display: flex; align-items: center; gap: 6px; font-size: 14px; }
-.stat-icon { font-size: 16px; line-height: 1; }
-.stat-label { color: var(--text-secondary); min-width: 32px; }
-.stat-value { font-weight: 600; color: var(--text-primary); }
+.info-section {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.char-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.char-level {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.char-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.stat-row .stat-icon { font-size: 14px; line-height: 1; }
+.stat-label { color: var(--text-muted); min-width: 24px; }
+
+.stat-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .stat-value.healthy { color: var(--hp-green); }
-.stat-value.wounded { color: var(--hp-yellow); }
+.stat-value.warning { color: var(--hp-yellow); }
 .stat-value.critical { color: var(--hp-red); }
 .stat-value.dead-text { color: #6c6c80; }
 .stat-value.gold { color: var(--accent-gold); }
