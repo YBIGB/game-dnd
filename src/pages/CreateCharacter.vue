@@ -30,6 +30,7 @@
         <!-- 属性分配区域 -->
         <div class="field-section">
           <label class="field-label">属性分配</label>
+          <span class="stat-hint">范围 3 ~ 10</span>
           <div class="stats-container">
             <div
               v-for="stat in statDefs"
@@ -48,7 +49,7 @@
                 <el-button
                   circle
                   size="small"
-                  :disabled="stats[stat.key] <= 0"
+                  :disabled="stats[stat.key] <= MIN_STAT"
                   class="ctrl-btn minus-btn"
                   @click="adjustStat(stat.key, -1)"
                 >
@@ -57,7 +58,7 @@
                 <el-button
                   circle
                   size="small"
-                  :disabled="stats[stat.key] >= 15 || remainingPoints <= 0"
+                  :disabled="stats[stat.key] >= MAX_STAT || remainingPoints <= 0"
                   class="ctrl-btn plus-btn"
                   @click="adjustStat(stat.key, 1)"
                 >
@@ -116,6 +117,8 @@ const name = ref("")
 
 // 六维初始全5，额外4点自由分配
 const INITIAL_STAT = 5
+const MIN_STAT = 3
+const MAX_STAT = 10
 const FREE_POINTS = 4
 
 const stats = reactive({
@@ -140,7 +143,7 @@ let changeTimer = null
 // 调整属性
 function adjustStat(key, delta) {
   const newVal = stats[key] + delta
-  if (newVal < 0 || newVal > 15) return
+  if (newVal < MIN_STAT || newVal > MAX_STAT) return
   if (delta > 0 && remainingPoints.value <= 0) return
 
   stats[key] = newVal
@@ -167,9 +170,9 @@ const canCreate = computed(() => {
 
 // 属性值颜色
 function valueColor(val) {
-  if (val >= 13) return "var(--hp-green)"
-  if (val >= 9) return "var(--text-primary)"
-  if (val >= 5) return "var(--text-secondary)"
+  if (val >= 8) return "var(--hp-green)"
+  if (val >= 6) return "var(--accent-gold)"
+  if (val === 5) return "var(--text-primary)"
   return "var(--hp-red)"
 }
 
@@ -275,6 +278,14 @@ function goBack() {
   margin-bottom: 0;
 }
 
+.stat-hint {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
 .field-label {
   display: block;
   font-size: 14px;
@@ -310,7 +321,14 @@ function goBack() {
 }
 
 .name-input :deep(.el-input__count) {
+  background: transparent;
   color: var(--text-muted);
+  font-size: 12px;
+}
+.name-input :deep(.el-input__count .el-input__count-inner) {
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .stats-container {
@@ -476,3 +494,4 @@ function goBack() {
   box-shadow: none !important;
 }
 </style>
+
