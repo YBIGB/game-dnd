@@ -1,48 +1,40 @@
-﻿<template>
+<template>
   <div class="judgement-content">
-    <!-- 掷骰过程 -->
-    <div class="dice-roll-section">
-      <div class="section-label">🎲 掷骰</div>
-      <div class="dice-result">
-        <span class="dice-number">{{ roll.raw }}</span>
-        <span class="dice-sides">d20</span>
-      </div>
+    <!-- 过程行：掷骰表达式和结果 -->
+    <div class="judgement-row">
+      <span class="row-label">🎲 掷骰</span>
+      <span class="row-value">掷出 1d20 = <strong>{{ roll.raw }}</strong></span>
     </div>
 
-    <!-- 调整值 -->
-    <div v-if="roll.modifier !== 0" class="modifier-section">
-      <div class="section-label">⚡ 调整值</div>
-      <div class="modifier-value" :class="roll.modifier > 0 ? 'positive' : 'negative'">
-        {{ roll.modifier > 0 ? "+" : "" }}{{ roll.modifier }}
-      </div>
+    <!-- 调整行：调整值计算 -->
+    <div v-if="roll.modifier !== 0" class="judgement-row">
+      <span class="row-label">⚡ 调整值</span>
+      <span class="row-value modifier" :class="roll.modifier > 0 ? 'positive' : 'negative'">
+        {{ roll.modifier > 0 ? '+' : '' }}{{ roll.modifier }}
+      </span>
     </div>
 
-    <!-- 分隔线 -->
     <div class="divider"></div>
 
-    <!-- 最终结果 -->
-    <div class="total-section">
-      <div class="section-label">📊 最终结果</div>
-      <div class="total-value">{{ roll.total }}</div>
+    <!-- 结果行：最终数值 -->
+    <div class="judgement-row">
+      <span class="row-label">📊 最终结果</span>
+      <span class="row-value total">{{ roll.total }}</span>
     </div>
 
-    <!-- 目标 DC -->
-    <div class="dc-section">
-      <div class="section-label">🎯 难度等级 (DC)</div>
-      <div class="dc-value">{{ roll.dc }}</div>
+    <!-- DC -->
+    <div class="judgement-row">
+      <span class="row-label">🎯 难度等级 (DC)</span>
+      <span class="row-value dc">{{ roll.dc }}</span>
     </div>
 
-    <!-- 成功/失败判定 -->
+    <!-- 判定行：成功/失败 + 结果描述 -->
     <div class="verdict-section">
-      <div
-        class="verdict-badge"
-        :class="roll.success ? 'success' : 'failure'"
-      >
-        {{ roll.success ? "✅ 成功" : "❌ 失败" }}
+      <div class="verdict-badge" :class="roll.success ? 'success' : 'failure'">
+        {{ roll.success ? '✅ 成功' : '❌ 失败' }}
       </div>
     </div>
 
-    <!-- 额外描述 -->
     <div v-if="roll.description" class="description">
       {{ roll.description }}
     </div>
@@ -74,96 +66,73 @@ export default { name: "JudgementContent" }
 
 <style scoped>
 .judgement-content {
-  text-align: center;
+  padding: 4px 0;
 }
 
-.section-label {
-  font-size: 13px;
-  color: #a0a0b0;
-  margin-bottom: 6px;
-}
-
-/* 掷骰区域 */
-.dice-roll-section {
-  margin-bottom: 14px;
-}
-
-.dice-result {
+.judgement-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  padding: 8px 0;
+  font-size: 14px;
 }
 
-.dice-number {
-  font-size: 36px;
-  font-weight: 800;
-  color: #f0c040;
+.row-label {
+  color: #a0a0b0;
+  font-size: 13px;
 }
 
-.dice-sides {
-  font-size: 16px;
-  color: #6c6c80;
+.row-value {
+  color: #e0e0e0;
+  font-size: 15px;
   font-weight: 600;
 }
 
-/* 调整值 */
-.modifier-section {
-  margin-bottom: 14px;
+.row-value strong {
+  color: #f0c040;
+  font-size: 20px;
 }
 
-.modifier-value {
-  font-size: 24px;
-  font-weight: 700;
+.row-value.modifier {
+  font-size: 18px;
 }
 
-.modifier-value.positive {
+.row-value.modifier.positive {
   color: #67c23a;
 }
 
-.modifier-value.negative {
+.row-value.modifier.negative {
   color: #f56c6c;
 }
 
-/* 分隔线 */
-.divider {
-  height: 1px;
-  background: #2a3a5c;
-  margin: 14px 0;
-}
-
-/* 最终结果 */
-.total-section {
-  margin-bottom: 10px;
-}
-
-.total-value {
-  font-size: 40px;
+.row-value.total {
+  font-size: 24px;
   font-weight: 800;
   color: #e0e0e0;
 }
 
-/* DC */
-.dc-section {
-  margin-bottom: 16px;
-}
-
-.dc-value {
-  font-size: 28px;
+.row-value.dc {
+  font-size: 20px;
   font-weight: 700;
   color: #e6a23c;
 }
 
-/* 判定 */
+.divider {
+  height: 1px;
+  background: #2a3a5c;
+  margin: 4px 0;
+}
+
 .verdict-section {
-  margin-bottom: 10px;
+  text-align: center;
+  padding: 12px 0 4px;
 }
 
 .verdict-badge {
   display: inline-block;
   padding: 8px 28px;
   border-radius: 8px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
 }
 
@@ -180,9 +149,11 @@ export default { name: "JudgementContent" }
 }
 
 .description {
-  margin-top: 12px;
+  text-align: center;
+  margin-top: 8px;
   color: #a0a0b0;
   font-size: 13px;
   font-style: italic;
+  line-height: 1.5;
 }
 </style>

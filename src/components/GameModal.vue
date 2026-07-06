@@ -50,7 +50,7 @@ const props = defineProps({
   component: { type: [Object, Function], default: null },
   componentProps: { type: Object, default: () => ({}) },
   buttons: { type: Array, default: () => [] },
-  closeOnOverlay: { type: Boolean, default: true },
+  closeOnOverlay: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(["close", "button-click"])

@@ -6,11 +6,21 @@ export const useDungeonStore = defineStore('dungeon', () => {
     hasKey: false,
     hasClue: false,
     shopRobbed: false,
+    shopTradeDone: false,
     graveDug: false,
+    graveInsightDone: false,
     bossDefeated: false,
   })
   function resetDungeon() {
-    dungeonState.value = { hasKey: false, hasClue: false, shopRobbed: false, graveDug: false, bossDefeated: false }
+    dungeonState.value = {
+      hasKey: false,
+      hasClue: false,
+      shopRobbed: false,
+      shopTradeDone: false,
+      graveDug: false,
+      graveInsightDone: false,
+      bossDefeated: false,
+    }
   }
   return { dungeonState, resetDungeon }
 })
