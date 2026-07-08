@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="dungeon-page">
     <div v-if="!characterStore.currentCharacter" class="no-character-overlay">
       <div class="no-char-card">
@@ -49,10 +49,14 @@ import { useDungeonStore } from "../stores/dungeon"
 import CharacterStatusBar from "../components/CharacterStatusBar.vue"
 import { showPrompt, showJudgement } from "../utils/modalHelper"
 import { useModalStore } from "../stores/modal"
+import { dungeonActionApi } from "../api/dungeon"
+import { ElMessage } from "element-plus"
 
 const router = useRouter()
 const characterStore = useCharacterStore()
 const dungeonStore = useDungeonStore()
+
+const actionLoading = ref(false)
 
 const nodes = [
   { id: "exit",  name: "出口", icon: "🚩", x: 50, y: 8  },
@@ -166,26 +170,6 @@ function rollD20(statValue, dc, description) {
   return { raw, modifier, total, dc, success, description }
 }
 
-function addItem(name, qty = 1) {
-  const inv = characterStore.currentCharacter.inventory
-  const existing = inv.find(i => i.name === name)
-  if (existing) {
-    existing.qty += qty
-  } else {
-    inv.push({ name, qty })
-  }
-}
-
-function removeItem(name, qty = 1) {
-  const inv = characterStore.currentCharacter.inventory
-  const idx = inv.findIndex(i => i.name === name)
-  if (idx === -1) return
-  inv[idx].qty -= qty
-  if (inv[idx].qty <= 0) {
-    inv.splice(idx, 1)
-  }
-}
-
 function handleAction(action) {
   switch (action.actionId) {
     case "shop_trade":    return handleShopTrade()
@@ -198,83 +182,149 @@ function handleAction(action) {
   }
 }
 
-function handleShopTrade() {
-  const cost = 50
-  const chara = characterStore.currentCharacter
-  if (chara.gold < cost) {
-    showPrompt("提示", "金币不足！购买铁铲需要 50 金币。")
-    return
+async function tryApiAction(actionId, localFn) {
+  if (!characterStore.currentCharacter) return
+  actionLoading.value = true
+  try {
+    const data = await dungeonActionApi({
+      actionId,
+      characterId: characterStore.currentCharacter.id,
+      dungeonState: { ...dungeonStore.dungeonState },
+    })
+    // API 成功，应用后端返回的更新
+    if (data.dungeonUpdates) {
+      dungeonStore.applyServerUpdates(data.dungeonUpdates)
+    }
+    if (data.updatedCharacter) {
+      characterStore.updateCharacter(characterStore.currentCharacter.id, data.updatedCharacter)
+    }
+    if (data.roll) {
+      showJudgement(data.roll, "判定结果")
+    }
+    if (data.message) {
+      showPrompt("结果", data.message)
+    }
+    return data
+  } catch (err) {
+    // API 不可用时回退到本地逻辑
+    ElMessage.warning("后端暂未连接，使用本地判定")
+    localFn()
+    actionLoading.value = false
   }
-  chara.gold -= cost
-  addItem("铁铲")
-  dungeonStore.dungeonState.shopTradeDone = true
-  showPrompt("获得物品", "你花 50 金币购买了一把铁铲！")
 }
 
-function handleShopSteal() {
-  const roll = rollD20(characterStore.currentCharacter.stats.dexterity, 15, "")
-  if (roll.success) {
-    characterStore.currentCharacter.gold += 30
-    roll.description = "成功！你顺手摸走了 30 枚金币！"
-  } else {
-    roll.description = "失败！老板瞪了你一眼，你赶紧缩回了手。"
-  }
-  dungeonStore.dungeonState.shopRobbed = true
-  showJudgement(roll, "🎯 巧手检定 - 盗窃")
-}
-
-function handleGraveDig() {
-  removeItem("铁铲")
-  dungeonStore.dungeonState.hasKey = true
-  dungeonStore.dungeonState.graveDug = true
-  showPrompt("获得物品", "你挖掘了一番，找到了一把生锈的钥匙！")
-}
-
-function handleGraveInsight() {
-  const roll = rollD20(characterStore.currentCharacter.stats.wisdom, 12, "")
-  if (roll.success) {
-    dungeonStore.dungeonState.hasClue = true
-    roll.description = "你敏锐地察觉到了隐藏的线索！一张泛黄的纸条上写着可疑的文字。"
-  } else {
-    roll.description = "你没有发现任何特别的东西。"
-  }
-  dungeonStore.dungeonState.graveInsightDone = true
-  showJudgement(roll, "💡 感知检定 - 灵感")
-}
-
-function handleBossFight() {
-  const roll = rollD20(characterStore.currentCharacter.stats.strength, 13, "")
-  if (roll.success) {
-    addItem("纪念章")
-    dungeonStore.dungeonState.bossDefeated = true
-    roll.description = "你击败了头目！从他身上找到了一枚纪念章。"
-  } else {
-    roll.description = "头目轻松挡下了你的攻击，你需要重新寻找机会。"
-  }
-  showJudgement(roll, "⚔️ 力量检定 - 战斗")
-}
-
-function handleBossPersuade() {
-  dungeonStore.dungeonState.hasClue = false
-  dungeonStore.dungeonState.hasKey = true
-  showPrompt("提示", "你出示了那张纸条，头目沉默片刻，扔给你一把钥匙。")
-}
-
-function handleExitLeave() {
-  const modalStore = useModalStore()
-  modalStore.open({
-    title: "🎉 恭喜通关！",
-    content: "你成功通过了副本的考验！<br>所有物品和金币已保留。",
-    buttons: [{
-      text: "确定",
-      type: "primary",
-      action: () => {
-        characterStore.currentCharacter.completedDungeons.push("demo副本")
-        dungeonStore.resetDungeon()
-        router.push("/tavern")
-      }
-    }]
+async function handleShopTrade() {
+  await tryApiAction("shop_trade", () => {
+    const cost = 50
+    const chara = characterStore.currentCharacter
+    if (chara.gold < cost) {
+      showPrompt("提示", "金币不足！购买铁铲需要 50 金币。")
+      return
+    }
+    chara.gold -= cost
+    chara.inventory.push({ name: "铁铲", qty: 1 })
+    dungeonStore.dungeonState.shopTradeDone = true
+    showPrompt("获得物品", "你花 50 金币购买了一把铁铲！")
   })
+}
+
+async function handleShopSteal() {
+  await tryApiAction("shop_steal", () => {
+    const roll = rollD20(characterStore.currentCharacter.stats.dexterity, 15, "")
+    if (roll.success) {
+      characterStore.currentCharacter.gold += 30
+      roll.description = "成功！你顺手摸走了 30 枚金币！"
+    } else {
+      roll.description = "失败！老板瞪了你一眼，你赶紧缩回了手。"
+    }
+    dungeonStore.dungeonState.shopRobbed = true
+    showJudgement(roll, "🎯 巧手检定 - 盗窃")
+  })
+}
+
+async function handleGraveDig() {
+  await tryApiAction("grave_dig", () => {
+    const inv = characterStore.currentCharacter.inventory
+    const idx = inv.findIndex(i => i.name === "铁铲")
+    if (idx !== -1) {
+      inv[idx].qty--
+      if (inv[idx].qty <= 0) inv.splice(idx, 1)
+    }
+    dungeonStore.dungeonState.hasKey = true
+    dungeonStore.dungeonState.graveDug = true
+    showPrompt("获得物品", "你挖掘了一番，找到了一把生锈的钥匙！")
+  })
+}
+
+async function handleGraveInsight() {
+  await tryApiAction("grave_insight", () => {
+    const roll = rollD20(characterStore.currentCharacter.stats.wisdom, 12, "")
+    if (roll.success) {
+      dungeonStore.dungeonState.hasClue = true
+      roll.description = "你敏锐地察觉到了隐藏的线索！一张泛黄的纸条上写着可疑的文字。"
+    } else {
+      roll.description = "你没有发现任何特别的东西。"
+    }
+    dungeonStore.dungeonState.graveInsightDone = true
+    showJudgement(roll, "💡 感知检定 - 灵感")
+  })
+}
+
+async function handleBossFight() {
+  await tryApiAction("boss_fight", () => {
+    const roll = rollD20(characterStore.currentCharacter.stats.strength, 13, "")
+    if (roll.success) {
+      characterStore.currentCharacter.inventory.push({ name: "纪念章", qty: 1 })
+      dungeonStore.dungeonState.bossDefeated = true
+      roll.description = "你击败了头目！从他身上找到了一枚纪念章。"
+    } else {
+      roll.description = "头目轻松挡下了你的攻击，你需要重新寻找机会。"
+    }
+    showJudgement(roll, "⚔️ 力量检定 - 战斗")
+  })
+}
+
+async function handleBossPersuade() {
+  await tryApiAction("boss_persuade", () => {
+    dungeonStore.dungeonState.hasClue = false
+    dungeonStore.dungeonState.hasKey = true
+    showPrompt("提示", "你出示了那张纸条，头目沉默片刻，扔给你一把钥匙。")
+  })
+}
+
+async function handleExitLeave() {
+  const data = await tryApiAction("exit_leave", () => {
+    const modalStore = useModalStore()
+    modalStore.open({
+      title: "🎉 恭喜通关！",
+      content: "你成功通过了副本的考验！<br>所有物品和金币已保留。",
+      buttons: [{
+        text: "确定",
+        type: "primary",
+        action: () => {
+          characterStore.currentCharacter.completedDungeons.push("demo副本")
+          dungeonStore.resetDungeon()
+          router.push("/tavern")
+        }
+      }]
+    })
+  })
+  // API 路径：后端已处理通关逻辑，仍需弹窗确认
+  if (data) {
+    const modalStore = useModalStore()
+    modalStore.open({
+      title: "🎉 恭喜通关！",
+      content: "你成功通过了副本的考验！<br>所有物品和金币已保留。",
+      buttons: [{
+        text: "确定",
+        type: "primary",
+        action: () => {
+          dungeonStore.resetDungeon()
+          router.push("/tavern")
+        }
+      }]
+    })
+  }
 }
 
 function goTavern() {
@@ -284,18 +334,10 @@ function goTavern() {
 onMounted(() => {
   dungeonStore.resetDungeon()
   currentNodeId.value = "start"
-  if (characterStore.characters.length === 0) {
-    characterStore.initDemoData()
-  }
 })
 </script>
 
 <style scoped>
-.dungeon-page { min-height: 100vh; background: var(--bg-primary); padding-bottom: 70px; position: relative; }
-.no-character-overlay { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-.no-char-card { text-align: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px 48px; }
-.no-char-icon { font-size: 48px; margin-bottom: 16px; }
-.no-char-text { color: var(--text-secondary); margin-bottom: 24px; font-size: 16px; }
 .dungeon-layout { display: flex; min-height: 100vh; }
 .map-area { width: 33.333%; min-width: 300px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 32px 16px; }
 .map-title { font-size: 18px; font-weight: 700; color: var(--accent-gold); margin-bottom: 28px; letter-spacing: 2px; }

@@ -7,18 +7,32 @@
         <h1 class="game-title">DND 跑团</h1>
       </div>
 
+      <!-- 登录/注册切换 -->
+      <div class="mode-tabs">
+        <span
+          class="mode-tab"
+          :class="{ active: !isRegister }"
+          @click="isRegister = false"
+        >登录</span>
+        <span
+          class="mode-tab"
+          :class="{ active: isRegister }"
+          @click="isRegister = true"
+        >注册</span>
+      </div>
+
       <!-- 表单 -->
       <el-form
         ref="formRef"
         :model="form"
         :rules="formRules"
         class="login-form"
-        @keyup.enter="handleLogin"
+        @keyup.enter="handleSubmit"
       >
         <el-form-item prop="account">
           <el-input
             v-model="form.account"
-            placeholder="请输入账号"
+            :placeholder="isRegister ? '请输入新账号' : '请输入账号'"
             :prefix-icon="User"
             size="large"
           />
@@ -28,7 +42,18 @@
           <el-input
             v-model="form.password"
             type="password"
-            placeholder="请输入密码"
+            placeholder="请输入密码（至少6位）"
+            :prefix-icon="Lock"
+            size="large"
+            show-password
+          />
+        </el-form-item>
+
+        <el-form-item prop="confirmPassword" v-if="isRegister">
+          <el-input
+            v-model="form.confirmPassword"
+            type="password"
+            placeholder="请确认密码"
             :prefix-icon="Lock"
             size="large"
             show-password
@@ -41,16 +66,17 @@
             size="large"
             class="login-btn"
             :loading="loading"
-            @click="handleLogin"
+            @click="handleSubmit"
           >
-            登 录
+            {{ isRegister ? "注 册" : "登 录" }}
           </el-button>
         </el-form-item>
       </el-form>
 
-      <!-- 提示信息 -->
+      <!-- 底部提示 -->
       <div class="login-hint">
-        <p>测试账号: admin / test    密码: 123456</p>
+        <p v-if="!isRegister">首次使用？切换到「注册」创建新账号</p>
+        <p v-else>已有账号？切换到「登录」</p>
       </div>
     </el-card>
   </div>
@@ -60,28 +86,46 @@
 import { ref, reactive } from "vue"
 import { useRouter } from "vue-router"
 import { User, Lock } from "@element-plus/icons-vue"
-import { ElMessageBox } from "element-plus"
+import { ElMessage } from "element-plus"
 import { useAuthStore } from "../stores/auth"
 
 const router = useRouter()
 const authStore = useAuthStore()
 const formRef = ref(null)
 const loading = ref(false)
+const isRegister = ref(false)
 
 const form = reactive({
   account: "",
   password: "",
+  confirmPassword: "",
 })
 
 const formRules = {
-  account: [{ required: true, message: "请输入账号", trigger: "blur" }],
-  password: [{ required: true, message: "请输入密码", trigger: "blur" }],
+  account: [
+    { required: true, message: "请输入账号", trigger: "blur" },
+  ],
+  password: [
+    { required: true, message: "请输入密码", trigger: "blur" },
+    { min: 6, message: "密码至少 6 位", trigger: "blur" },
+  ],
+  confirmPassword: [
+    {
+      validator: (_rule, value, callback) => {
+        if (isRegister.value && value !== form.password) {
+          callback(new Error("两次输入的密码不一致"))
+        } else if (isRegister.value && !value) {
+          callback(new Error("请再次输入密码"))
+        } else {
+          callback()
+        }
+      },
+      trigger: "blur",
+    },
+  ],
 }
 
-const VALID_ACCOUNTS = ["admin", "test"]
-const VALID_PASSWORD = "123456"
-
-async function handleLogin() {
+async function handleSubmit() {
   if (!formRef.value) return
 
   try {
@@ -92,22 +136,19 @@ async function handleLogin() {
 
   loading.value = true
 
-  // 模拟网络延迟
-  await new Promise((r) => setTimeout(r, 600))
-
-  const account = form.account.trim().toLowerCase()
-  if (VALID_ACCOUNTS.includes(account) && form.password === VALID_PASSWORD) {
-    authStore.setUsername(account)
+  try {
+    if (isRegister.value) {
+      await authStore.register(form.account.trim(), form.password)
+      ElMessage.success("注册成功，欢迎加入！")
+    } else {
+      await authStore.login(form.account.trim(), form.password)
+    }
     router.push("/tavern")
-  } else {
-    ElMessageBox.alert("账号或密码错误", "登录失败", {
-      confirmButtonText: "确定",
-      type: "error",
-      center: true,
-    })
+  } catch (err) {
+    ElMessage.error(err.message || "操作失败，请重试")
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 }
 </script>
 
@@ -134,7 +175,7 @@ async function handleLogin() {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  margin: 16px 0 28px;
+  margin: 16px 0 8px;
 }
 
 .dice-icon {
@@ -148,6 +189,37 @@ async function handleLogin() {
   color: var(--accent-gold);
   letter-spacing: 4px;
   margin: 0;
+}
+
+/* 模式切换 */
+.mode-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 24px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.mode-tab {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s, border-color 0.2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -9px;
+  user-select: none;
+}
+
+.mode-tab:hover {
+  color: var(--text-primary);
+}
+
+.mode-tab.active {
+  color: var(--accent-gold);
+  border-bottom-color: var(--accent-gold);
 }
 
 /* 表单 */
@@ -222,4 +294,3 @@ async function handleLogin() {
   letter-spacing: 0.5px;
 }
 </style>
-

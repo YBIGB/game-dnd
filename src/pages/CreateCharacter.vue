@@ -177,30 +177,31 @@ function valueColor(val) {
 }
 
 // 创建角色
-function handleCreate() {
+async function handleCreate() {
   if (!canCreate.value) return
 
   const trimmedName = name.value.trim()
 
-  // 生成新角色
   const newCharacter = {
-    id: Date.now(),
     name: trimmedName,
     level: 1,
     hp: 20,
     maxHp: 20,
-    gold: 10,
+    gold: Math.floor(Math.random() * 51) + 50,
     stats: { ...stats },
     inventory: [],
     completedDungeons: [],
     isAlive: true,
   }
 
-  characterStore.addCharacter(newCharacter)
-  characterStore.selectCharacter(newCharacter)
-
-  ElMessage.success(`欢迎冒险者「${trimmedName}」加入！`)
-  router.push("/tavern")
+  try {
+    const created = await characterStore.addCharacter(newCharacter)
+    characterStore.selectCharacter(created)
+    ElMessage.success("欢迎冒险者「" + trimmedName + "」加入！")
+    router.push("/tavern")
+  } catch (err) {
+    ElMessage.error(err.message || "创建角色失败")
+  }
 }
 
 // 返回大厅（酒馆）
@@ -494,4 +495,3 @@ function goBack() {
   box-shadow: none !important;
 }
 </style>
-

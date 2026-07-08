@@ -168,18 +168,16 @@ function goDungeon() {
   router.push("/dungeon")
 }
 
-function dismissCharacter() {
+async function dismissCharacter() {
   const c = characterStore.currentCharacter
   if (!c) return
-  characterStore.removeCharacter(c.id)
-  ElMessage.success(`冒险者 ${c.name} 已被遣散`)
+  try {
+    await characterStore.removeCharacter(c.id)
+    ElMessage.success(`冒险者 ${c.name} 已被遣散`)
+  } catch (err) {
+    ElMessage.error(err.message || "遣散失败")
+  }
 }
-
-const hpPercent = computed(() => {
-  const c = characterStore.currentCharacter
-  if (!c || c.maxHp <= 0) return 0
-  return Math.round((c.hp / c.maxHp) * 100)
-})
 
 const hpColor = computed(() => {
   if (hpPercent.value > 60) return "#67c23a"

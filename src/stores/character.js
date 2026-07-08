@@ -1,9 +1,11 @@
 ﻿import { defineStore } from "pinia"
 import { ref, computed } from "vue"
+import { fetchCharactersApi, createCharacterApi, updateCharacterApi, deleteCharacterApi } from "../api/character"
 
 export const useCharacterStore = defineStore("character", () => {
   const characters = ref([])
   const currentCharacter = ref(null)
+  const loading = ref(false)
 
   const characterCount = computed(() => characters.value.length)
 
@@ -15,73 +17,62 @@ export const useCharacterStore = defineStore("character", () => {
     currentCharacter.value = character
   }
 
-  function addCharacter(character) {
-    characters.value.push(character)
-  }
-
-  function removeCharacter(id) {
-    const idx = characters.value.findIndex(c => c.id === id)
-    if (idx !== -1) {
-      characters.value.splice(idx, 1)
-      if (currentCharacter.value && currentCharacter.value.id === id) {
-        currentCharacter.value = null
-      }
+  async function fetchCharacters() {
+    loading.value = true
+    try {
+      const data = await fetchCharactersApi()
+      characters.value = data.characters || data
+    } catch {
+      // 后端不可用时保持空列表
+      characters.value = []
+    } finally {
+      loading.value = false
     }
   }
 
-  function initDemoData() {
-    if (characters.value.length > 0) return
-    characters.value.push({
-      id: 1,
-      name: "伊兰迪尔",
-      level: 3,
-      hp: 24,
-      maxHp: 30,
-      gold: 150,
-      stats: {
-        strength: 14,
-        dexterity: 12,
-        constitution: 16,
-        intelligence: 10,
-        wisdom: 8,
-        charisma: 13,
-      },
-      inventory: [
-        { name: "铁剑", qty: 1 },
-        { name: "治疗药水", qty: 2 },
-      ],
-      completedDungeons: ["幽暗洞穴"],
-      isAlive: true,
+  async function addCharacter(character) {
+    const data = await createCharacterApi({
+      name: character.name,
+      stats: character.stats,
     })
-    characters.value.push({
-      id: 2,
-      name: "塞尔温",
-      level: 1,
-      hp: 0,
-      maxHp: 20,
-      gold: 50,
-      stats: {
-        strength: 8,
-        dexterity: 15,
-        constitution: 10,
-        intelligence: 14,
-        wisdom: 12,
-        charisma: 16,
-      },
-      inventory: [{ name: "短弓", qty: 1 }],
-      completedDungeons: [],
-      isAlive: false,
-    })
+    const created = data.character || data
+    characters.value.push(created)
+    return created
+  }
+
+  async function removeCharacter(id) {
+    const idx = characters.value.findIndex((c) => c.id === id)
+    if (idx === -1) return
+    await deleteCharacterApi(id)
+    characters.value.splice(idx, 1)
+    if (currentCharacter.value && currentCharacter.value.id === id) {
+      currentCharacter.value = null
+    }
+  }
+
+  async function updateCharacter(id, data) {
+    const result = await updateCharacterApi(id, data)
+    const updated = result.character || result
+    const idx = characters.value.findIndex((c) => c.id === id)
+    if (idx !== -1) {
+      characters.value[idx] = { ...characters.value[idx], ...updated }
+    }
+    if (currentCharacter.value && currentCharacter.value.id === id) {
+      currentCharacter.value = { ...currentCharacter.value, ...updated }
+    }
+    return updated
   }
 
   return {
     characters,
     currentCharacter,
+    loading,
     characterCount,
     isCurrentCharacterAlive,
     selectCharacter,
+    fetchCharacters,
     addCharacter,
     removeCharacter,
-    initDemoData,
+    updateCharacter,
   }
 })
