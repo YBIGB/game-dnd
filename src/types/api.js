@@ -158,4 +158,19 @@
  * @property {boolean} [dungeonUpdates.bossDefeated]
  */
 
+
+// ──── 背包模块 Inventory ────
+
+/**
+ * 背包物品 DTO（前端扩展，含展示信息）
+ * @typedef {Object} InventoryItemDTO
+ * @property {number|string} id - 物品唯一标识
+ * @property {string} name - 物品名称
+ * @property {string} icon - 图标（emoji）
+ * @property {number} qty - 持有数量
+ * @property {string} description - 文本说明
+ * @property {string} specialNote - 特殊说明
+ * @property {boolean} stackable - 是否可堆叠
+ */
 export default {}
+
