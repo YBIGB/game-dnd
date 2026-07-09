@@ -361,3 +361,86 @@ interface RollResult {
 | 版本 | 日期 | 修改内容 | 修改人 |
 |------|------|----------|--------|
 | v1.0 | 2026-07-08 | 初始版本，包含 Auth/Character/Dungeon 三模块 | — |
+
+
+---
+
+## 五、交易模块 Trade
+
+### 5.1 获取商店商品列表
+
+```
+GET /api/shop/inventory
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Success Response：**
+
+```typescript
+interface ShopInventoryResponse {
+  inventory: InventoryItemDTO[]
+  npcGold: number
+}
+```
+
+**错误场景：** 未登录（code=1002）
+
+---
+
+### 5.2 执行交易
+
+```
+POST /api/shop/trade
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Request Body：**
+
+```typescript
+interface TradeRequest {
+  characterId: number
+  itemId: string
+  direction: "buy" | "sell"
+  qty: number
+}
+```
+
+**Success Response：**
+
+```typescript
+interface TradeResponse {
+  success: boolean
+  message: string
+  updatedCharacter: Partial<CharacterDTO>
+  npcGold: number
+}
+```
+
+**错误场景：** 金币不足（code=5001）、角色不存在（code=3001）、未登录（code=1002）
+
+---
+
+### 5.3 新增错误码
+
+| code | 含义 | 说明 |
+|------|------|------|
+| 5001 | 金币不足 | 购买时玩家金币 < 物品价值，或出售时 NPC 资金不足 |
+
+### 5.4 InventoryItemDTO（更新）
+
+```typescript
+interface InventoryItemDTO {
+  id: number | string
+  name: string
+  icon: string
+  qty: number
+  description: string
+  specialNote: string
+  value: number
+  category?: string
+  stackable: boolean
+}
+```
+

@@ -2,3 +2,4 @@
 export { fetchCharactersApi, createCharacterApi, updateCharacterApi, deleteCharacterApi } from "./character"
 export { dungeonActionApi } from "./dungeon"
 export { fetchInventoryApi, MOCK_INVENTORY } from "./inventory"
+export { fetchShopInventoryApi, executeTradeApi, MOCK_SHOP_INVENTORY } from "./trade"

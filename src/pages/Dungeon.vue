@@ -50,6 +50,8 @@ import CharacterStatusBar from "../components/CharacterStatusBar.vue"
 import { showPrompt, showJudgement } from "../utils/modalHelper"
 import { useModalStore } from "../stores/modal"
 import { dungeonActionApi } from "../api/dungeon"
+import { fetchInventoryApi, fetchShopInventoryApi } from "../api"
+import TradePanel from "../components/TradePanel.vue"
 import { ElMessage } from "element-plus"
 
 const router = useRouter()
@@ -212,22 +214,48 @@ async function tryApiAction(actionId, localFn) {
     actionLoading.value = false
   }
 }
-
 async function handleShopTrade() {
-  await tryApiAction("shop_trade", () => {
-    const cost = 50
-    const chara = characterStore.currentCharacter
-    if (chara.gold < cost) {
-      showPrompt("提示", "金币不足！购买铁铲需要 50 金币。")
-      return
-    }
-    chara.gold -= cost
-    chara.inventory.push({ name: "铁铲", qty: 1 })
-    dungeonStore.dungeonState.shopTradeDone = true
-    showPrompt("获得物品", "你花 50 金币购买了一把铁铲！")
+  const chara = characterStore.currentCharacter
+  if (!chara) return
+  // 获取玩家背包（含金币物品）
+  const rawPlayerInv = await fetchInventoryApi(chara.id)
+  // 保证金币物品存在且数量与角色 gold 一致
+  let playerInventory = [...rawPlayerInv]
+  const goldIdx = playerInventory.findIndex((i) => i.id === "gold")
+  if (goldIdx !== -1) {
+    playerInventory[goldIdx] = { ...playerInventory[goldIdx], qty: chara.gold }
+  } else {
+    playerInventory.push({
+      id: "gold", name: "金币", icon: "🪙", qty: chara.gold,
+      description: "通用货币，交易的等价物", specialNote: "等价物",
+      value: 1, stackable: true,
+    })
+  }
+  // 获取商店库存
+  const shopData = await fetchShopInventoryApi()
+  const npcInventory = shopData.inventory.map((item) => ({ ...item }))
+  const modalStore = useModalStore()
+  modalStore.open({
+    title: "💰 交易",
+    component: TradePanel,
+    componentProps: {
+      playerInventory,
+      npcInventory,
+      npcName: "商店老板",
+      onTrade: (direction, item) => {
+        const goldItem = playerInventory.find((i) => i.id === "gold")
+        if (goldItem) {
+          chara.gold = goldItem.qty
+        }
+        chara.inventory = playerInventory
+          .filter((i) => i.id !== "gold")
+          .map((i) => ({ name: i.name, qty: i.qty }))
+        dungeonStore.dungeonState.shopTradeDone = true
+      },
+    },
+    buttons: [{ text: "关闭", type: "primary", action: () => modalStore.closeTop() }],
   })
 }
-
 async function handleShopSteal() {
   await tryApiAction("shop_steal", () => {
     const roll = rollD20(characterStore.currentCharacter.stats.dexterity, 15, "")
@@ -358,3 +386,4 @@ onMounted(() => {
 .scene-actions { margin-top: 32px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .action-btn { min-width: 180px; font-size: 15px; font-weight: 600; letter-spacing: 1px; }
 </style>
+

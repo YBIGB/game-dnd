@@ -170,6 +170,8 @@
  * @property {number} qty - 持有数量
  * @property {string} description - 文本说明
  * @property {string} specialNote - 特殊说明
+ * @property {number} value - 金币价值（交易定价用）
+ * @property {string} [category] - 物品分类（武器/消耗品/关键物品等，后续扩展）
  * @property {boolean} stackable - 是否可堆叠
  */
 export default {}
