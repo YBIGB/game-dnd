@@ -8,7 +8,7 @@
             <span class="welcome-icon">👋</span>
             <span>欢迎回来，{{ authStore.username || "冒险者" }}</span>
           </div>
-          <el-button type="primary" class="action-btn" @click="goCreateCharacter">+ 新建角色</el-button>
+          <el-button v-if="!hasAliveCharacter" type="primary" class="action-btn" @click="goCreateCharacter">+ 新建角色</el-button>
         </div>
       </header>
 
@@ -31,6 +31,18 @@
                 <div class="stat-row"><span class="stat-icon">💰</span><span class="stat-label">金币</span><span class="stat-value gold">{{ c.gold }}</span></div>
               </div>
             </div>
+            <el-popconfirm
+              title="确定要遣散该冒险者吗？"
+              confirm-button-text="遣散"
+              cancel-button-text="取消"
+              @confirm.stop="dismissCharacterFromList(c)"
+            >
+              <template #reference>
+                <el-button class="dismiss-btn" size="small" text type="danger" @click.stop>
+                  遣散
+                </el-button>
+              </template>
+            </el-popconfirm>
             <div class="status-badge" :class="c.isAlive ? 'alive' : 'dead'">{{ c.isAlive ? "存活" : "阵亡" }}</div>
           </div>
         </div>
@@ -46,17 +58,7 @@
             <span class="char-subtitle">Lv.{{ characterStore.currentCharacter.level }}</span>
           </div>
           <div class="bar-right">
-            <el-popconfirm
-              title="确定要遣散该冒险者吗？"
-              confirm-button-text="遣散"
-              cancel-button-text="取消"
-              @confirm="dismissCharacter"
-            >
-              <template #reference>
-                <el-button type="danger" size="small" plain>遣散冒险者</el-button>
-              </template>
-            </el-popconfirm>
-            <el-button class="back-btn" @click="backToList">返回</el-button>
+            <el-button class="back-btn" @click="backToList">返回酒馆</el-button>
           </div>
         </div>
       </header>
@@ -157,6 +159,11 @@ onMounted(() => {
   characterStore.fetchCharacters()
 })
 
+// 是否有存活角色
+const hasAliveCharacter = computed(() =>
+  characterStore.characters.some((c) => c.isAlive)
+)
+
 function goCreateCharacter() {
   router.push("/create-character")
 }
@@ -176,6 +183,15 @@ function goDungeon() {
 async function dismissCharacter() {
   const c = characterStore.currentCharacter
   if (!c) return
+  try {
+    await characterStore.removeCharacter(c.id)
+    ElMessage.success(`冒险者 ${c.name} 已被遣散`)
+  } catch (err) {
+    ElMessage.error(err.message || "遣散失败")
+  }
+}
+
+async function dismissCharacterFromList(c) {
   try {
     await characterStore.removeCharacter(c.id)
     ElMessage.success(`冒险者 ${c.name} 已被遣散`)
@@ -338,6 +354,21 @@ function statColor(val) {
 
 .character-card.dead {
   opacity: 0.55;
+}
+
+.dismiss-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  font-size: 12px;
+  padding: 2px 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+
+.character-card:hover .dismiss-btn {
+  opacity: 1;
 }
 
 .avatar-section {
