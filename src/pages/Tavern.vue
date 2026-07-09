@@ -130,7 +130,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, onMounted } from "vue"
 import { useRouter } from "vue-router"
 import { ElMessage } from "element-plus"
 import { useCharacterStore } from "../stores/character"
@@ -151,6 +151,11 @@ const statList = [
   { key: "wisdom", label: "感知" },
   { key: "charisma", label: "魅力" },
 ]
+
+// 页面挂载时从后端拉取角色列表
+onMounted(() => {
+  characterStore.fetchCharacters()
+})
 
 function goCreateCharacter() {
   router.push("/create-character")
@@ -178,6 +183,11 @@ async function dismissCharacter() {
     ElMessage.error(err.message || "遣散失败")
   }
 }
+
+const hpPercent = computed(() => {
+  if (!characterStore.currentCharacter) return 0
+  return (characterStore.currentCharacter.hp / characterStore.currentCharacter.maxHp) * 100
+})
 
 const hpColor = computed(() => {
   if (hpPercent.value > 60) return "#67c23a"
