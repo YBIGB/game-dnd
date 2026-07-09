@@ -26,8 +26,8 @@
         <span class="stat-value">{{ characterStore.currentCharacter.gold }}</span>
       </div>
 
-      <!-- 持有物 -->
-      <div class="stat-item">
+      <!-- 持有物（可点击打开背包） -->
+      <div class="stat-item backpack-trigger" @click="openBackpack">
         <span class="stat-icon">🎒</span>
         <span class="stat-value">{{ totalItems }}</span>
       </div>
@@ -49,12 +49,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useCharacterStore } from '../stores/character'
-import { useDungeonStore } from '../stores/dungeon'
+import { computed } from "vue"
+import { useCharacterStore } from "../stores/character"
+import { useDungeonStore } from "../stores/dungeon"
+import { useModalStore } from "../stores/modal"
+import InventoryPanel from "./InventoryPanel.vue"
 
 const characterStore = useCharacterStore()
 const dungeonStore = useDungeonStore()
+const modalStore = useModalStore()
 
 const hpPercent = computed(() => {
   const c = characterStore.currentCharacter
@@ -63,9 +66,9 @@ const hpPercent = computed(() => {
 })
 
 const hpColor = computed(() => {
-  if (hpPercent.value > 60) return '#67c23a'
-  if (hpPercent.value >= 30) return '#e6a23c'
-  return '#f56c6c'
+  if (hpPercent.value > 60) return "#67c23a"
+  if (hpPercent.value >= 30) return "#e6a23c"
+  return "#f56c6c"
 })
 
 const totalItems = computed(() => {
@@ -73,6 +76,16 @@ const totalItems = computed(() => {
   if (!c || !c.inventory) return 0
   return c.inventory.reduce((sum, item) => sum + (item.qty || 0), 0)
 })
+
+function openBackpack() {
+  modalStore.open({
+    title: "🎒 背包",
+    component: InventoryPanel,
+    componentProps: {},
+    closeOnOverlay: true,
+    buttons: [],
+  })
+}
 </script>
 
 <style scoped>
@@ -158,6 +171,19 @@ const totalItems = computed(() => {
   font-weight: 600;
   color: #e0e0e0;
   font-variant-numeric: tabular-nums;
+}
+
+/* 背包触发按钮 */
+.backpack-trigger {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+
+.backpack-trigger:hover {
+  background: rgba(240, 192, 64, 0.12);
 }
 
 /* 特殊标记 */

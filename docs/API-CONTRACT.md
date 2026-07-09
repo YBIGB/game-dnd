@@ -500,9 +500,9 @@ interface NpcDetailResponse {
 
 ---
 
-## 六、附录
+## 七、附录
 
-### 6.1 属性值颜色建议（前端展示）
+### 7.1 属性值颜色建议（前端展示）
 
 | 属性值范围 | 颜色语义 | 色值 |
 |-----------|---------|------|
@@ -510,9 +510,93 @@ interface NpcDetailResponse {
 | 6 ~ 7 | 普通（金色） | `#e6a23c` |
 | 3 ~ 5 | 薄弱（红色） | `#f56c6c` |
 
-### 6.2 版本记录
+### 7.2 版本记录
 
 | 版本 | 日期 | 修改内容 | 修改人 |
 |------|------|----------|--------|
 | v1.0 | 2026-07-08 | 初始版本，包含 Auth/Character/Dungeon 三模块 | — |
 | v2.0 | 2026-07-09 | 新增 Item/NPC 模块、DTO 标准化 inventory 为 itemId 格式 | — |
+| v2.1 | 2026-07-09 | 新增交易模块 §五 Trade（商店购买/出售） | — |
+
+---
+
+## 五、交易模块 Trade
+
+### 5.1 获取商店商品列表
+
+```
+GET /api/shop/inventory
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Success Response：**
+
+```typescript
+interface ShopInventoryResponse {
+  inventory: InventoryItemDTO[]
+  npcGold: number
+}
+```
+
+**错误场景：** 未登录（code=1002）
+
+---
+
+### 5.2 执行交易
+
+```
+POST /api/shop/trade
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Request Body：**
+
+```typescript
+interface TradeRequest {
+  characterId: number
+  itemId: string
+  direction: "buy" | "sell"
+  qty: number
+}
+```
+
+**Success Response：**
+
+```typescript
+interface TradeResponse {
+  success: boolean
+  message: string
+  updatedCharacter: Partial<CharacterDTO>
+  npcGold: number
+}
+```
+
+---
+
+### 5.3 新增错误码
+
+| code | 含义 | 说明 |
+|------|------|------|
+| 5001 | 金币不足 | 购买时玩家金币 < 物品价值，或出售时 NPC 资金不足 |
+
+### 5.4 InventoryItemDTO
+
+```typescript
+interface InventoryItemDTO {
+  id: number | string
+  name: string
+  icon: string
+  qty: number
+  description: string
+  specialNote: string
+  value: number
+  category?: string
+  stackable: boolean
+}
+```
+
+---
+
+## 六、NPC 系统 NPC

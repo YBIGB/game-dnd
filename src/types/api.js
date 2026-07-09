@@ -160,78 +160,20 @@
  */
 
 
-// ──── 物品系统 Item ────
+// ──── 背包/交易模块 ────
 
 /**
- * 物品 DTO
- * @typedef {Object} ItemDTO
- * @property {number} id
- * @property {string} name
- * @property {string} type         weapon | armor | potion | accessory | tool | key_item | material
- * @property {string} subtype      sword | bow | light_armor | ring | healing | shovel | medal | key | ...
- * @property {string} description
- * @property {number} price        购买价
- * @property {number} sellPrice    出售价
- * @property {string} rarity       common | uncommon | rare | legendary
- * @property {Object} stats
- * @property {number} [stats.damage]
- * @property {number} [stats.defense]
- * @property {number} [stats.heal]
- * @property {boolean} stackable
- * @property {number} maxStack
- */
-
-/**
- * 物品列表响应
- * @typedef {Object} ItemListResponse
- * @property {ItemDTO[]} items
- */
-
-/**
- * 单个物品响应
- * @typedef {Object} ItemDetailResponse
- * @property {ItemDTO} item
- */
-
-// ──── NPC 系统 ────
-
-/**
- * NPC DTO
- * @typedef {Object} NPCDTO
- * @property {number} id
- * @property {string} name
- * @property {string} role        shopkeeper | blacksmith | quest_giver | boss | villager
- * @property {number} level
- * @property {number} hp
- * @property {number} maxHp
- * @property {number} gold
- * @property {Object} stats       六维属性
- * @property {number} stats.strength
- * @property {number} stats.dexterity
- * @property {number} stats.constitution
- * @property {number} stats.intelligence
- * @property {number} stats.wisdom
- * @property {number} stats.charisma
- * @property {Array<{itemId:number, itemName:string, qty:number}>} inventory
- * @property {Object} equipment
- * @property {ItemDTO|null} equipment.weapon
- * @property {ItemDTO|null} equipment.armor
- * @property {ItemDTO|null} equipment.accessory
- * @property {string} description
- * @property {string} dialogue
- * @property {boolean} isHostile
- */
-
-/**
- * NPC 列表响应
- * @typedef {Object} NpcListResponse
- * @property {NPCDTO[]} npcs
- */
-
-/**
- * 单个 NPC 响应
- * @typedef {Object} NpcDetailResponse
- * @property {NPCDTO} npc
+ * 背包物品 DTO（前端扩展，含展示信息）
+ * @typedef {Object} InventoryItemDTO
+ * @property {number|string} id - 物品唯一标识
+ * @property {string} name - 物品名称
+ * @property {string} icon - 图标（emoji）
+ * @property {number} qty - 持有数量
+ * @property {string} description - 文本说明
+ * @property {string} specialNote - 特殊说明
+ * @property {number} value - 金币价值（交易定价用）
+ * @property {string} [category] - 物品分类
+ * @property {boolean} stackable - 是否可堆叠
  */
 
 export default {}
