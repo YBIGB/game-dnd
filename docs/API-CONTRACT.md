@@ -197,7 +197,7 @@ interface UpdateCharacterRequest {
   hp?: number
   gold?: number
   isAlive?: boolean
-  inventory?: Array<{ name: string; qty: number }>
+  inventory?: Array<{ itemId: number; qty: number }>
   completedDungeons?: string[]
 }
 ```
@@ -253,11 +253,74 @@ interface CharacterDTO {
     charisma: number
   }
   inventory: Array<{
-    name: string
+    itemId: number
+    itemName: string    // 从 items 表解析，前端直接展示
     qty: number
   }>
   completedDungeons: string[]   // 已通关副本名称列表
   isAlive: boolean              // 是否存活
+}
+```
+
+---
+
+### 2.6 物品数据结构（DTO）
+
+```typescript
+interface ItemDTO {
+  id: number
+  name: string
+  type: string          // weapon | armor | potion | accessory | tool | key_item | material
+  subtype: string       // sword | bow | light_armor | ring | healing | shovel | medal | key | ...
+  description: string
+  price: number         // 购买价
+  sellPrice: number     // 出售价
+  rarity: string        // common | uncommon | rare | legendary
+  stats: {
+    damage?: number
+    defense?: number
+    heal?: number
+    // 后续可扩展
+  }
+  stackable: boolean
+  maxStack: number
+}
+```
+
+---
+
+### 2.7 NPC 数据结构（DTO）
+
+```typescript
+interface NPCDTO {
+  id: number
+  name: string
+  role: string                // shopkeeper | blacksmith | quest_giver | boss | villager
+  level: number
+  hp: number
+  maxHp: number
+  gold: number
+  stats: {
+    strength: number
+    dexterity: number
+    constitution: number
+    intelligence: number
+    wisdom: number
+    charisma: number
+  }
+  inventory: Array<{
+    itemId: number
+    itemName: string
+    qty: number
+  }>
+  equipment: {
+    weapon: ItemDTO | null
+    armor: ItemDTO | null
+    accessory: ItemDTO | null
+  }
+  description: string
+  dialogue: string
+  isHostile: boolean
 }
 ```
 
@@ -310,7 +373,13 @@ interface DungeonActionResponse {
   success: boolean              // 行动是否成功执行
   message?: string              // 行动的描述文本
   roll?: RollResult             // 需要掷骰的行动返回检定结果
-  updatedCharacter?: Partial<CharacterDTO>   // 角色变更（HP/金币/物品等）
+  updatedCharacter?: {
+    // 角色变更字段，与 CharacterDTO 一致
+    hp?: number
+    gold?: number
+    inventory?: Array<{ itemId: number; qty: number }>
+    // 其他字段同 CharacterDTO
+  }
   dungeonUpdates?: {            // 副本状态更新
     hasKey?: boolean
     hasClue?: boolean
@@ -346,9 +415,94 @@ interface RollResult {
 
 ---
 
-## 四、附录
+## 四、物品系统 Item
 
-### 4.1 属性值颜色建议（前端展示）
+### 4.1 获取物品列表
+
+```
+GET /api/items
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Query Parameters（可选）：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| type | string | 按 type 筛选（weapon / potion / ...）|
+| subtype | string | 按 subtype 筛选（sword / healing / ...）|
+
+**Success Response：**
+
+```typescript
+interface ItemListResponse {
+  items: ItemDTO[]
+}
+```
+
+### 4.2 获取单个物品
+
+```
+GET /api/items/:id
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Success Response：**
+
+```typescript
+interface ItemDetailResponse {
+  item: ItemDTO
+}
+```
+
+---
+
+## 五、NPC 系统 NPC
+
+### 5.1 获取 NPC 列表
+
+```
+GET /api/npcs
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Query Parameters（可选）：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| role | string | 按角色筛选（shopkeeper / boss / ...）|
+
+**Success Response：**
+
+```typescript
+interface NpcListResponse {
+  npcs: NPCDTO[]
+}
+```
+
+### 5.2 获取单个 NPC
+
+```
+GET /api/npcs/:id
+```
+
+**Headers：** `Authorization: Bearer <token>`
+
+**Success Response：**
+
+```typescript
+interface NpcDetailResponse {
+  npc: NPCDTO
+}
+```
+
+---
+
+## 六、附录
+
+### 6.1 属性值颜色建议（前端展示）
 
 | 属性值范围 | 颜色语义 | 色值 |
 |-----------|---------|------|
@@ -356,8 +510,9 @@ interface RollResult {
 | 6 ~ 7 | 普通（金色） | `#e6a23c` |
 | 3 ~ 5 | 薄弱（红色） | `#f56c6c` |
 
-### 4.2 版本记录
+### 6.2 版本记录
 
 | 版本 | 日期 | 修改内容 | 修改人 |
 |------|------|----------|--------|
 | v1.0 | 2026-07-08 | 初始版本，包含 Auth/Character/Dungeon 三模块 | — |
+| v2.0 | 2026-07-09 | 新增 Item/NPC 模块、DTO 标准化 inventory 为 itemId 格式 | — |

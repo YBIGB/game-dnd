@@ -97,7 +97,7 @@
               <el-tab-pane label="背包" name="inventory">
                 <div v-if="characterStore.currentCharacter.inventory && characterStore.currentCharacter.inventory.length > 0" class="inventory-list">
                   <div v-for="(item, idx) in characterStore.currentCharacter.inventory" :key="idx" class="inv-item">
-                    <span class="inv-name">{{ item.name }}</span>
+                    <span class="inv-name">{{ item.itemName }}</span>
                     <el-tag class="inv-qty" size="small" type="info">×{{ item.qty }}</el-tag>
                   </div>
                 </div>

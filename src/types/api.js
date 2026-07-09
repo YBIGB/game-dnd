@@ -66,7 +66,7 @@
  * @property {number} stats.intelligence
  * @property {number} stats.wisdom
  * @property {number} stats.charisma
- * @property {Array<{name:string, qty:number}>} inventory  持有物
+ * @property {Array<{itemId:number, itemName:string, qty:number}>} inventory  持有物（itemId 引用 items 表）
  * @property {string[]} completedDungeons  已通关副本名称列表
  * @property {boolean} isAlive       是否存活
  */
@@ -97,7 +97,7 @@
  * @property {number} [hp]
  * @property {number} [gold]
  * @property {boolean} [isAlive]
- * @property {Array<{name:string, qty:number}>} [inventory]
+ * @property {Array<{itemId:number, qty:number}>} [inventory]
  * @property {string[]} [completedDungeons]
  */
 
@@ -147,7 +147,8 @@
  * @property {boolean} success                   行动是否成功执行
  * @property {string} [message]                  行动的描述文本
  * @property {RollResult} [roll]                 需要掷骰的行动返回检定结果
- * @property {Partial<CharacterDTO>} [updatedCharacter]  角色变更
+ * @property {Object} [updatedCharacter]                  角色变更（字段同 CharacterDTO）
+ * @property {Array<{itemId:number, qty:number}>} [updatedCharacter.inventory]  物品更新
  * @property {Object} [dungeonUpdates]           副本状态更新
  * @property {boolean} [dungeonUpdates.hasKey]
  * @property {boolean} [dungeonUpdates.hasClue]
@@ -158,4 +159,80 @@
  * @property {boolean} [dungeonUpdates.bossDefeated]
  */
 
+
+// ──── 物品系统 Item ────
+
+/**
+ * 物品 DTO
+ * @typedef {Object} ItemDTO
+ * @property {number} id
+ * @property {string} name
+ * @property {string} type         weapon | armor | potion | accessory | tool | key_item | material
+ * @property {string} subtype      sword | bow | light_armor | ring | healing | shovel | medal | key | ...
+ * @property {string} description
+ * @property {number} price        购买价
+ * @property {number} sellPrice    出售价
+ * @property {string} rarity       common | uncommon | rare | legendary
+ * @property {Object} stats
+ * @property {number} [stats.damage]
+ * @property {number} [stats.defense]
+ * @property {number} [stats.heal]
+ * @property {boolean} stackable
+ * @property {number} maxStack
+ */
+
+/**
+ * 物品列表响应
+ * @typedef {Object} ItemListResponse
+ * @property {ItemDTO[]} items
+ */
+
+/**
+ * 单个物品响应
+ * @typedef {Object} ItemDetailResponse
+ * @property {ItemDTO} item
+ */
+
+// ──── NPC 系统 ────
+
+/**
+ * NPC DTO
+ * @typedef {Object} NPCDTO
+ * @property {number} id
+ * @property {string} name
+ * @property {string} role        shopkeeper | blacksmith | quest_giver | boss | villager
+ * @property {number} level
+ * @property {number} hp
+ * @property {number} maxHp
+ * @property {number} gold
+ * @property {Object} stats       六维属性
+ * @property {number} stats.strength
+ * @property {number} stats.dexterity
+ * @property {number} stats.constitution
+ * @property {number} stats.intelligence
+ * @property {number} stats.wisdom
+ * @property {number} stats.charisma
+ * @property {Array<{itemId:number, itemName:string, qty:number}>} inventory
+ * @property {Object} equipment
+ * @property {ItemDTO|null} equipment.weapon
+ * @property {ItemDTO|null} equipment.armor
+ * @property {ItemDTO|null} equipment.accessory
+ * @property {string} description
+ * @property {string} dialogue
+ * @property {boolean} isHostile
+ */
+
+/**
+ * NPC 列表响应
+ * @typedef {Object} NpcListResponse
+ * @property {NPCDTO[]} npcs
+ */
+
+/**
+ * 单个 NPC 响应
+ * @typedef {Object} NpcDetailResponse
+ * @property {NPCDTO} npc
+ */
+
 export default {}
+

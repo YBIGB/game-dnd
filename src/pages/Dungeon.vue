@@ -135,7 +135,7 @@ const currentScene = computed(() => {
   function hasItem(name) {
     const c = characterStore.currentCharacter
     if (!c || !c.inventory) return false
-    return c.inventory.some(i => i.name === name && i.qty > 0)
+    return c.inventory.some(i => i.itemName === name && i.qty > 0)
   }
 
   const filtered = base.actions.filter(a => {
@@ -222,7 +222,7 @@ async function handleShopTrade() {
       return
     }
     chara.gold -= cost
-    chara.inventory.push({ name: "铁铲", qty: 1 })
+    chara.inventory.push({ itemId: 4, itemName: "铁铲", qty: 1 })
     dungeonStore.dungeonState.shopTradeDone = true
     showPrompt("获得物品", "你花 50 金币购买了一把铁铲！")
   })
@@ -245,7 +245,7 @@ async function handleShopSteal() {
 async function handleGraveDig() {
   await tryApiAction("grave_dig", () => {
     const inv = characterStore.currentCharacter.inventory
-    const idx = inv.findIndex(i => i.name === "铁铲")
+    const idx = inv.findIndex(i => i.itemName === "铁铲")
     if (idx !== -1) {
       inv[idx].qty--
       if (inv[idx].qty <= 0) inv.splice(idx, 1)
@@ -274,7 +274,7 @@ async function handleBossFight() {
   await tryApiAction("boss_fight", () => {
     const roll = rollD20(characterStore.currentCharacter.stats.strength, 13, "")
     if (roll.success) {
-      characterStore.currentCharacter.inventory.push({ name: "纪念章", qty: 1 })
+      characterStore.currentCharacter.inventory.push({ itemId: 5, itemName: "纪念章", qty: 1 })
       dungeonStore.dungeonState.bossDefeated = true
       roll.description = "你击败了头目！从他身上找到了一枚纪念章。"
     } else {
